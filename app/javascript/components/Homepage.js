@@ -56,8 +56,6 @@ export const Homepage = () => {
       setIsEnabled(result)
       if (result) {
         nami.getBalance().then((walletCbor) => {
-          console.log(walletCbor)
-
           window.cbor.decodeFirst(walletCbor).then((balance) => {
             let goatIds = []
             if (balance?.[1]) {
@@ -70,7 +68,6 @@ export const Homepage = () => {
                   for (let elem2 of elem[1].entries()) {
                     const item = Buffer.from(elem2[0]).toString("hex")
                     const assetId = hex_to_ascii(item)
-                    console.log(assetId)
                     goatIds.push(assetId)
                   }
                 }
@@ -80,7 +77,6 @@ export const Homepage = () => {
             const walletData = [balance?.[0], goatIds]
             setWallet(walletData)
             nami.getCollateral().then((cl) => {
-              console.log(cl)
               window.cbor.decodeFirst(cl[0]).then((col) => {
                 const sumCollaterals = col
                   ?.map((c) => c[1])
@@ -112,7 +108,6 @@ export const Homepage = () => {
           window.cbor.decodeFirst(walletCbor).then((balance) => {
             setWallet(balance)
             nami.getCollateral().then((cl) => {
-              console.log(cl)
               window.cbor.decodeFirst(cl[0]).then((col) => {
                 const sumCollaterals = col
                   ?.map((c) => c[1])
@@ -194,6 +189,7 @@ export const Homepage = () => {
                   {wallet[1]?.map((id) => (
                     <Paragraph
                       as="h3"
+                      key={id}
                       sx={{
                         px: 25,
                         pb: "5px",
