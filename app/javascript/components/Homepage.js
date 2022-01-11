@@ -1,5 +1,12 @@
 import React, { useEffect, useState } from "react"
-import { ThemeProvider, Box, Grid, Image, Paragraph, Link } from "theme-ui"
+import {
+  ThemeProvider,
+  Box,
+  Grid,
+  Image as Img,
+  Paragraph,
+  Link,
+} from "theme-ui"
 import { theme } from "./theme"
 import Goat1 from "images/goat-1.gif"
 import Goat2 from "images/goat-2.gif"
@@ -9,8 +16,10 @@ import Goat5 from "images/goat-5.gif"
 import Play from "images/play.png"
 import Pause from "images/pause.png"
 
-const bgColors = ["#fb1420", "#84ef42", "#fbfbf7", "#45b2f3", "#35ec80"]
-const goats = [Goat1, Goat2, Goat3, Goat4, Goat5]
+const allAssets = require("./goats-ipfs.json")
+const bgColors = ["#fbfbf7", "#fb1420", "#84ef42", "#45b2f3", "#35ec80"]
+
+const goats = [Goat3, Goat1, Goat2, Goat4, Goat5]
 
 function hex_to_ascii(str1) {
   var hex = str1.toString()
@@ -19,6 +28,11 @@ function hex_to_ascii(str1) {
     str += String.fromCharCode(parseInt(hex.substr(n, 2), 16))
   }
   return str
+}
+
+function preloadImage(url) {
+  var img = new Image()
+  img.src = url
 }
 
 function useInterval(callback, delay) {
@@ -39,19 +53,25 @@ function useInterval(callback, delay) {
 
 export const Homepage = () => {
   const nami = window?.cardano
+  const sessionStorage = window?.sessionStorage
+  const hideGifs = sessionStorage?.getItem("run") == "false"
 
   const [index, setIndex] = useState(0)
-  const [run, setRun] = useState(true)
+  const [run, setRun] = useState(!hideGifs)
   const [wallet, setWallet] = useState(false)
   const [isEnabled, setIsEnabled] = useState(false)
   const [collateral, setCollateral] = useState(0)
 
   const goatsPolicy = "c281975562f394761771f13f599881517fa8455946e7e30454de22da"
-  const halloweenPolicy =
-    "961cd58296989d288d8ad39507e81fd40c3e562da89c90e5632061da"
-  const gtfoPolicy = "206c651b110d91d26106e8aa9237e09ac23c6be854f0f3c2e7338668"
+  // const halloweenPolicy =
+  //   "961cd58296989d288d8ad39507e81fd40c3e562da89c90e5632061da"
+  // const gtfoPolicy = "206c651b110d91d26106e8aa9237e09ac23c6be854f0f3c2e7338668"
 
   useEffect(() => {
+    goats.forEach((goat) => {
+      console.log(goat)
+      preloadImage(goat)
+    })
     nami?.isEnabled()?.then((result) => {
       setIsEnabled(result)
       if (result) {
@@ -62,9 +82,7 @@ export const Homepage = () => {
               for (let elem of balance[1].entries()) {
                 const policy = Buffer.from(elem[0]).toString("hex")
 
-                if (
-                  [goatsPolicy, halloweenPolicy, gtfoPolicy].includes(policy)
-                ) {
+                if ([goatsPolicy].includes(policy)) {
                   for (let elem2 of elem[1].entries()) {
                     const item = Buffer.from(elem2[0]).toString("hex")
                     const assetId = hex_to_ascii(item)
@@ -161,17 +179,6 @@ export const Homepage = () => {
                     : "Connect Nami ₳"}
                 </Paragraph>
               </Box>
-              <Paragraph
-                as="h3"
-                sx={{
-                  px: 25,
-                  py: 15,
-                  display: "inline-block",
-                  textAlign: "center",
-                }}
-              >
-                Does not account for ₳ locked in SCs
-              </Paragraph>
               {wallet?.[1] && wallet?.[1]?.length > 0 && (
                 <>
                   <Paragraph
@@ -186,20 +193,54 @@ export const Homepage = () => {
                   >
                     You own:
                   </Paragraph>
-                  {wallet[1]?.map((id) => (
-                    <Paragraph
-                      as="h3"
-                      key={id}
-                      sx={{
-                        px: 25,
-                        pb: "5px",
-                        display: "inline-block",
-                        textAlign: "center",
-                      }}
-                    >
-                      {id}
-                    </Paragraph>
-                  ))}
+                  {wallet[1]?.map((id) => {
+                    const assetId = id.replace("GOATTribe", "")
+                    return (
+                      <Grid
+                        key={id}
+                        sx={{
+                          alignItems: "center",
+                          justifyContent: "center",
+                          px: "15px",
+                        }}
+                      >
+                        <Paragraph
+                          as="h3"
+                          sx={{
+                            px: 25,
+                            pt: "25px",
+                            pb: "5px",
+                            display: "inline-block",
+                            textAlign: "center",
+                          }}
+                        >
+                          {id}
+                        </Paragraph>
+                        {allAssets[assetId]?.wallpaper?.httpLink && (
+                          <Grid sx={{ justifyContent: "center" }}>
+                            <Paragraph
+                              as="h3"
+                              sx={{
+                                px: 25,
+                                pb: "0px",
+                                display: "inline-block",
+                                textAlign: "center",
+                              }}
+                            >
+                              Wallpaper
+                            </Paragraph>
+                            <Img
+                              src={allAssets[assetId]?.wallpaper?.httpLink}
+                              sx={{
+                                width: "100%",
+                                maxWidth: "300px",
+                              }}
+                            />
+                          </Grid>
+                        )}
+                      </Grid>
+                    )
+                  })}
                 </>
               )}
             </>
@@ -258,30 +299,20 @@ export const Homepage = () => {
               </Box>
             </>
           )}
-          <Paragraph
-            as="h3"
-            sx={{
-              px: "3px",
-              display: "inline-block",
-              textAlign: "center",
-              maxWidth: "300px",
-              mx: "auto",
-              pt: "50px",
-            }}
-          >
-            This page is still under construction. Come back later!
-          </Paragraph>
         </Grid>
-        <Image
-          src={goats[index]}
-          sx={{
-            position: "absolute",
-            left: 0,
-            bottom: 0,
-            width: 250,
-            zIndex: 2,
-          }}
-        />
+        {run && (
+          <Img
+            src={goats[index]}
+            sx={{
+              position: "absolute",
+              left: 0,
+              bottom: 0,
+              width: 250,
+              zIndex: 2,
+            }}
+          />
+        )}
+
         <Box
           sx={{
             bg: "#a6611c",
@@ -291,9 +322,10 @@ export const Homepage = () => {
             height: "64px",
           }}
         ></Box>
-        <Image
+        <Img
           src={run ? Pause : Play}
           onClick={() => {
+            sessionStorage?.setItem("run", !run)
             setRun(!run)
           }}
           sx={{
